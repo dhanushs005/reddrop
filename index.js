@@ -25,14 +25,10 @@ app.post("/download", (req, res) => {
         return res.status(400).json({ success: false, error: "Resolution is required" });
     }
 
-    // Create a temporary file path with a guaranteed .mp4 extension
     const tmpFile = tmp.tmpNameSync({ postfix: '.mp4' });
 
-    // A more robust yt-dlp command
-    // -f: Selects the best video and audio up to the chosen resolution, or the best available single file.
-    // --merge-output-format: Ensures the final, merged file is an MP4.
-    // -o: Specifies the exact output file path.
     const args = [
+        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36", // Add this line
         "-f",
         `bestvideo[height<=${resolution}]+bestaudio/best[height<=${resolution}]/best`,
         "--merge-output-format", "mp4",
@@ -55,7 +51,6 @@ app.post("/download", (req, res) => {
     downloader.on("close", (code) => {
         if (code !== 0) {
             console.error(`yt-dlp process exited with code ${code}`);
-            // Clean up the empty/failed file if it exists
              if (fs.existsSync(tmpFile)) {
                 fs.unlink(tmpFile, (err) => {
                     if (err) console.error("Failed to delete failed temp file:", err);
@@ -64,7 +59,6 @@ app.post("/download", (req, res) => {
             return res.status(500).json({ success: false, error: "Failed to process video. The format may be unavailable or the URL is invalid." });
         }
 
-        // Check if the file was successfully created
         if (fs.existsSync(tmpFile)) {
             const stat = fs.statSync(tmpFile);
             res.writeHead(200, {
@@ -75,10 +69,8 @@ app.post("/download", (req, res) => {
 
             const readStream = fs.createReadStream(tmpFile);
             
-            // Pipe the file stream to the response
             readStream.pipe(res);
 
-            // Delete the file after it has been sent
             readStream.on('close', () => {
                 fs.unlink(tmpFile, (err) => {
                     if (err) {
