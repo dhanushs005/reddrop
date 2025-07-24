@@ -7,7 +7,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <link
             rel="icon"
-            href="https://www.youtube.com/s/desktop/6e44c342/img/favicon_144x144.png"
+            href="https://www.youtube.com/s/desktop/d3493113/img/favicon.ico"
         />
         <style>
             /* Custom keyframes for bounce animation */
@@ -528,7 +528,7 @@
 
                 try {
                     const response = await fetch(
-                        "/download", // Ensure your backend is running on this port
+                        "/download", // Using a relative URL
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -538,7 +538,7 @@
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.message || "Download failed");
+                        throw new Error(errorData.error || "Download failed");
                     }
 
                     // Once fetch is successful, transition to downloading phase
@@ -552,7 +552,7 @@
                     const contentDisposition = response.headers.get(
                         "Content-Disposition",
                     );
-                    let filename = "video.webm";
+                    let filename = `video_${resolution}p.mp4`; // Default filename
                     if (
                         contentDisposition &&
                         contentDisposition.indexOf("filename=") !== -1
@@ -561,18 +561,13 @@
                             .split("filename=")[1]
                             .split(";")[0]
                             .replace(/"/g, "");
-                    } else {
-                        // Fallback to a basic filename or parse from URL (less reliable)
-                        const urlParams = new URLSearchParams(
-                            new URL(url).search,
-                        );
-                        const videoId = urlParams.get("v");
-                        if (videoId) {
-                            filename = `youtube_video_${videoId}_${resolution}p.webm`;
-                        }
                     }
+                    
                     link.download = filename;
+                    document.body.appendChild(link);
                     link.click();
+                    document.body.removeChild(link);
+
 
                     // Finalize progress
                     clearInterval(interval);
